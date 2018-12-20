@@ -2,15 +2,16 @@
 
 var camera,
     plight,
-    myScene;
+    myScene,
+    myBall;
 
 
 function main() {
 
-  var canvas = document.getElementById('renderCanvas');
-  var engine = new BABYLON.Engine(canvas, true);
+  let canvas = document.getElementById('renderCanvas');
+  let engine = new BABYLON.Engine(canvas, true);
 
-  var createScene = function() {
+  let createScene = function() {
     // Create a basic BJS Scene object.
     let scene = new BABYLON.Scene(engine);
 
@@ -20,7 +21,7 @@ function main() {
     // Create Arc Rotate Camera
     // Parameters: alpha, beta, radius, target position, scene
     // var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
-    camera = new BABYLON.ArcRotateCamera("Camera", (Math.PI * 1.5), (Math.PI * 0.4), 20, new BABYLON.Vector3(0,0,0), scene);
+    camera = new BABYLON.ArcRotateCamera("Camera", (Math.PI * 1.5), (Math.PI * 0.3), 25, new BABYLON.Vector3(0,0,0), scene);
     // Target the camera to scene origin.
     // camera.setTarget( new BABYLON.Vector3(-1,0,0) );
     // Positions the camera overwriting alpha, beta, radius
@@ -29,47 +30,75 @@ function main() {
     camera.attachControl(canvas, true);
 
     // Create a basic light, aiming 0,1,0 - meaning, to the sky.
-    var hemlight1 = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,2,-0.5), scene);
+    let hemlight1 = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,2,-0.5), scene);
     // plight = new BABYLON.PointLight("pointLight", new BABYLON.Vector3(1, -10, 1), scene);
     // console.dir(plight);
 
     // faceColors = [color1,color2...color6]
     // [front,back,left,]
-    var boxFaceColors = new Array(6);
-
+    let boxFaceColors = new Array(6);
+    // faceColor(back,front,right,left,top,bottom)
     boxFaceColors[0] = myColors.cTeal;   // back
     boxFaceColors[1] = myColors.cTeal;   // front
-    boxFaceColors[2] = myColors.cBrick;    // right
-    boxFaceColors[3] = myColors.cBrick;    // left
-    boxFaceColors[4] = myColors.cBrick;    //  top
-    boxFaceColors[5] = myColors.cBrick;   // bottom
+    boxFaceColors[2] = myColors.cTeal;    // right
+    boxFaceColors[3] = myColors.cTeal;    // left
+    boxFaceColors[4] = myColors.cTeal;    //  top
+    boxFaceColors[5] = myColors.cTeal;   // bottom
+
+    let faceColorsLR = new Array(6);
+    for (let i = 0; i < 6; i++) { faceColorsLR[i] = myColors.cTeal; }
+    faceColorsLR[0] = myColors.cBrick;
+    faceColorsLR[1] = myColors.cBrick;
+
+    let faceColorsFB = new Array(6);
+    for (let i = 0; i < 6; i++) { faceColorsFB[i] = myColors.cTeal; }
+    faceColorsFB[2] = myColors.cBrick;
+    faceColorsFB[3] = myColors.cBrick;
+
+    let groundColors = new Array(6);
+    for (let i = 0; i < 6; i++) { groundColors[i] = myColors.cTeal; }
+    groundColors[4] = myColors.cLightTeal;
+
+    // options: { size, height, width, depth, faceColors[BABYLON.Color4 x 6], faceUV[texture x 6], updatable, sideOrientation }
 
     // BABYLON.MeshBuilder.CreateBox( name, {options}, scene)
     // options: { size, height, width, depth, faceColors[BABYLON.Color4 x 6], faceUV[texture x 6], updatable, sideOrientation }
-    var backBox = BABYLON.MeshBuilder.CreateBox("myBox", {height: 5, width: 10, depth: 0.5, faceColors: boxFaceColors}, scene);
-    backBox.position = new BABYLON.Vector3(0,2,5);
 
+    let groundCoverHeight = 0.1;
+    let groundCover = BABYLON.MeshBuilder.CreateBox("myBox", {height: groundCoverHeight, width: 10, depth: 10, faceColors: groundColors}, scene);
+    groundCover.position = new BABYLON.Vector3(0,0,0);
 
-    var faceColorsAllGreen = new Array(6);
-    for (let i = 0; i < 6; i++) { faceColorsAllGreen[i] = myColors.cTeal; }
-    faceColorsAllGreen[1] = myColors.cBrick;
-    console.log(faceColorsAllGreen);
-    // options: { size, height, width, depth, faceColors[BABYLON.Color4 x 6], faceUV[texture x 6], updatable, sideOrientation }
-    var testBox1 = BABYLON.MeshBuilder.CreateBox("testBox", {height: 1, width: 1, depth: 10, faceColors: faceColorsAllGreen, updatable: true}, scene);
-    testBox1.position = new BABYLON.Vector3(-5,1,0);
+    let backBoxDetph = 1;
+    let backBox = BABYLON.MeshBuilder.CreateBox("myBox", {height: 6.2, width: 12.2, depth: backBoxDetph, faceColors: faceColorsFB}, scene);
+    backBox.position = new BABYLON.Vector3(0,2,5+(backBoxDetph/2));
 
-    var testBox2 = BABYLON.MeshBuilder.CreateBox("testBox2", {height: 1, width: 1, depth: 10, faceColors: faceColorsAllGreen, updatable: true}, scene);
-    testBox2.position = new BABYLON.Vector3(5,1,0);
+    let boxLeftWidth = 1;
+    let boxLeft = BABYLON.MeshBuilder.CreateBox("boxLeft", {height: 2, width: boxLeftWidth, depth: 12.2, faceColors: faceColorsLR, updatable: true}, scene);
+    boxLeft.position = new BABYLON.Vector3(-5-(boxLeftWidth/2),0,0);
 
-    var sphere = BABYLON.MeshBuilder.CreateSphere('sphere', {segments:16, diameter:2}, scene);
-    sphere.position.y = 1; // by default the center of the objct is 0,0,0
-    sphere.vel = 0.001;
+    let boxRightWidth = 1;
+    let boxRight = BABYLON.MeshBuilder.CreateBox("boxRight", {height: 2, width: boxRightWidth, depth: 12.2, faceColors: faceColorsLR, updatable: true}, scene);
+    boxRight.position = new BABYLON.Vector3(5+(boxLeftWidth/2),0,0);
+
+    let boxFrontDepth = 1;
+    let boxFront = BABYLON.MeshBuilder.CreateBox("boxFront", {height: 2.2, width: 12.2, depth: boxFrontDepth, faceColors: faceColorsFB, updatable: true}, scene);
+    boxFront.position = new BABYLON.Vector3(0,0,-5-(boxFrontDepth/2));
+
+    let diam = 1;
+    myBall = BABYLON.MeshBuilder.CreateSphere('myBall', {segments:16, diameter:diam}, scene);
+    myBall.position.y = diam/2; // by default the center of the objct is 0,0,0
+    myBall.xVel = 0.06;
+    myBall.zVel = 0.05;
+    myBall.rad = diam / 2;
+
 
     // Create a built-in "ground" shape.
-    var ground = BABYLON.MeshBuilder.CreateGround('ground1', {height:10, width:10, subdivisions: 2}, scene);
+    let ground = BABYLON.MeshBuilder.CreateGround('ground1', {height:10, width:10, subdivisions: 2}, scene);
 
-    // Keyboard events
-    var inputMap = {};
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // KEYBOARD INPUTS
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    let inputMap = {};
     scene.actionManager = new BABYLON.ActionManager(scene);
     scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, function (evt) {
         inputMap[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
@@ -87,21 +116,21 @@ function main() {
           times = 1;
         }
         if(inputMap["w"]){
-            sphere.position.z += 0.1;
+            myBall.position.z += 0.1;
         }
         if(inputMap["a"]){
-            sphere.position.x -= 0.1;
+            myBall.position.x -= 0.1;
         }
         if(inputMap["s"]){
-            sphere.position.z -= 0.1;
+            myBall.position.z -= 0.1;
         }
         if(inputMap["d"]){
-            sphere.position.x += 0.1;
+            myBall.position.x += 0.1;
         }
     });
 
     scene.onBeforeRenderObservable.add( () => {
-      sphere.position.x += sphere.vel;
+      mainUpdate();
     });
 
     // Return the created scene.
@@ -128,8 +157,19 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 
-
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+///////    UPDATE
+////////////////////////////////////////////////////////////////////////////////////////////////////
+function mainUpdate() {
+  myBall.position.x += myBall.xVel;
+  myBall.position.z += myBall.zVel;
+  if ( ((myBall.position.x + myBall.rad) >= 5) || ((myBall.position.x - myBall.rad) <= -5) ) {
+    myBall.xVel *= -1;
+  }
+  if ( ((myBall.position.z + myBall.rad) >= 5) || ((myBall.position.z - myBall.rad) <= -5) ) {
+    myBall.zVel *= -1;
+  }
+}
 
 
 
@@ -148,5 +188,7 @@ var myColors = {
   cPurple: new BABYLON.Color4(1,0,1,1),
   cWhite: new BABYLON.Color4(1,1,1,1),
   cBrick: new BABYLON.Color4.FromInts(240,95,59,1), // rgba(240,95,59,1),
-  cTeal: new BABYLON.Color4.FromInts(66,159,158,1)
+  cTeal: new BABYLON.Color4.FromInts(66,159,158,1),
+  cLightTeal: new BABYLON.Color4.FromInts(165,197,195,1),
+  cDarkTeal: new BABYLON.Color4.FromInts(0,120,114,1)
 };
